@@ -1,0 +1,51 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: mysql
+spec:
+  ports:
+  - port: 3306
+    nodePort: 30000
+  selector:
+    app: mysql
+  type: NodePort
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mysql
+spec:
+  selector:
+    matchLabels:
+      app: mysql
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: mysql
+    spec:
+      nodeSelector:
+        node: dnaz-proj-006
+      containers:
+      - image: mysql:5.6
+        name: mysql
+        env:
+          # Use secret in real usage
+        - name: MYSQL_ROOT_PASSWORD
+          value: cocacola
+        resources:
+          limits:
+            memory: "2048M"
+          requests:
+            memory: "1024M"
+        ports:
+        - containerPort: 3306 
+          name: mysql
+        volumeMounts:
+        - mountPath: /var/lib/mysql
+          name: mysqldata
+      volumes:
+        - name: mysqldata
+          hostPath:
+            path: /mnt/pod_data/mysql

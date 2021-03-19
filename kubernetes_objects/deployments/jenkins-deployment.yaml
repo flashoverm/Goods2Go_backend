@@ -1,0 +1,68 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: jenkins
+spec:
+  ports:
+  - port: 8080
+    nodePort: 32000
+  selector:
+    app: jenkins
+  type: NodePort
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: jenkins
+spec:
+  selector:
+    matchLabels:
+      app: jenkins
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: jenkins
+    spec:
+      nodeSelector:
+        node: dnaz-proj-007
+      containers:
+      - image: praha1889/customjenkins
+        name: jenkins
+        env:
+        - name: SSH_PASS_USER
+          valueFrom:
+            secretKeyRef:
+              name: sshpasssecret
+              key: username
+        - name: SSH_PASS_PW
+          valueFrom:
+            secretKeyRef:
+              name: sshpasssecret
+              key: password
+        - name: IP_MASTERNODE
+          valueFrom:
+            secretKeyRef:
+              name: sshpasssecret
+              key: ipaddress
+        resources:
+          limits:
+            memory: "3072M"
+        ports:
+        - containerPort: 8080 
+          name: jenkins
+        volumeMounts:
+        - mountPath: /var/jenkins_home
+          name: jenkinsdata
+        - mountPath: /var/run/docker.sock
+          name: dockerrundata
+      imagePullSecrets:
+      - name: regcred
+      volumes:
+        - name: jenkinsdata
+          hostPath:
+            path: /mnt/pod_data/jenkins
+        - name: dockerrundata
+          hostPath:
+            path: /var/run/docker.sock

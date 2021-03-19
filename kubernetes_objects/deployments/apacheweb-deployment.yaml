@@ -1,0 +1,43 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: apache-g2g-web
+spec:
+  ports:
+  - port: 80
+    nodePort: 31000
+  selector:
+    app: apache-g2g-web
+  type: NodePort
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: apache-g2g-web
+spec:
+  selector:
+    matchLabels:
+      app: apache-g2g-web
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: apache-g2g-web
+    spec:
+      nodeSelector:
+        node: dnaz-proj-007
+      containers:
+      - image: praha1889/g2gweb:latest
+        imagePullPolicy: "Always"
+        name: apache-g2g-web
+        resources:
+          limits:
+            memory: "1024M"
+          requests:
+            memory: "512M"
+        ports:
+        - containerPort: 80 
+          name: apache-g2g-web
+      imagePullSecrets:
+      - name: regcred

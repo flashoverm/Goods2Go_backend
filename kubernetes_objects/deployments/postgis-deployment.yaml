@@ -1,0 +1,51 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgis
+spec:
+  ports:
+  - port: 5432
+    nodePort: 31500
+  selector:
+    app: postgis
+  type: NodePort
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: postgis
+spec:
+  selector:
+    matchLabels:
+      app: postgis
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: postgis
+    spec:
+      nodeSelector:
+        node: dnaz-proj-006
+      containers:
+      - image: mdillon/postgis
+        name: postgis
+        env:
+          # Use secret in real usage
+        - name: POSTGRES_PASSWORD
+          value: cocacola
+        resources:
+          limits:
+            memory: "2048M"
+          requests:
+            memory: "1024M"
+        ports:
+        - containerPort: 5432 
+          name: postgis
+        volumeMounts:
+        - mountPath: /var/lib/postgresql/data
+          name: postgisdata
+      volumes:
+        - name: postgisdata
+          hostPath:
+            path: /mnt/pod_data/postgis
